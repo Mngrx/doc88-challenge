@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pastry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class PastryController extends Controller
 {
@@ -14,17 +15,10 @@ class PastryController extends Controller
      */
     public function index()
     {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
+        return response()->json(
+            Pastry::all(),
+            200
+        );
     }
 
     /**
@@ -35,7 +29,29 @@ class PastryController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $data = $request->all();
+
+        $validator = Validator::make($data, $this->rules());
+
+        if ($validator->fails()) {
+            return response()->json(
+                $validator->errors(),
+                400
+            );
+        }
+
+        $pastry = new Pastry;
+
+        $pastry->name = $data['name'];
+        $pastry->price = $data['price'];
+        $pastry->photo = $data['photo'];
+
+        $pastry->save();
+
+        return response()->json(
+            'Successfully created.',
+            201
+        );
     }
 
     /**
@@ -44,21 +60,14 @@ class PastryController extends Controller
      * @param  \App\Pastry  $pastry
      * @return \Illuminate\Http\Response
      */
-    public function show(Pastry $pastry)
+    public function show(int $id)
     {
-        //
+        return response()->json(
+            Pastry::where('id', $id)->first(),
+            200
+        );
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Pastry  $pastry
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Pastry $pastry)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
@@ -67,9 +76,31 @@ class PastryController extends Controller
      * @param  \App\Pastry  $pastry
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Pastry $pastry)
+    public function update(Request $request, int $id)
     {
-        //
+        $data = $request->all();
+
+        $validator = Validator::make($data, $this->rules());
+
+        if ($validator->fails()) {
+            return response()->json(
+                $validator->errors(),
+                400
+            );
+        }
+
+        $pastry = Pastry::where('id', $id)->first();
+
+        $pastry->name = $data['name'] ?? $pastry->name;
+        $pastry->price = $data['price'] ?? $pastry->price;
+        $pastry->photo = $data['photo'] ?? $pastry->photo;
+
+        $pastry->save();
+
+        return response()->json(
+            'Successfully updated.',
+            200
+        );
     }
 
     /**
@@ -78,8 +109,26 @@ class PastryController extends Controller
      * @param  \App\Pastry  $pastry
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Pastry $pastry)
+    public function destroy(int $id)
     {
-        //
+        $pastry = Pastry::where('id', $id)->first();
+
+        $data = $pastry->array();
+
+        $pastry->delete();
+
+        return response()->json(
+            $data,
+            200
+        );
+    }
+
+    private function rules(): array
+    {
+        return [
+            'name' => 'required',
+            'price' => ['required', 'numeric'],
+            'photo' => ['required', 'url'],
+        ];
     }
 }
